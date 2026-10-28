@@ -175,6 +175,12 @@ class MainActivity : Activity() {
             label("Paper ${blueprint.paper.name}: ${result.correct}/${result.total} correct")
             label("${result.attempted} attempted • ${result.incorrect} incorrect • ${result.unanswered} unanswered")
             label("Marked for review at submission: ${exam.markedCount}")
+            label("Section-wise performance", 20f)
+            MockAnalytics.sections(exam).forEach { section ->
+                label("${section.subject.title}: ${section.correct}/${section.total} correct • " +
+                    "${section.incorrect} incorrect • ${section.unanswered} unanswered")
+            }
+            action("Review answers") { showMockAnswerReview(exam) }
             action("Home") { showHome() }
         }
 
@@ -247,6 +253,17 @@ class MainActivity : Activity() {
             }
             override fun onFinish() { complete() }
         }.start()
+    }
+
+    private fun showMockAnswerReview(exam: MockExam) {
+        screen("Full-paper answer review")
+        exam.quiz.questions.forEachIndexed { index, question ->
+            val selected = exam.quiz.selectedIndex(question.id)
+            label("${index + 1}. ${question.prompt}")
+            label("Your answer: ${selected?.let { question.options[it] } ?: "Unanswered"}")
+            label("Correct answer: ${question.options[question.correctIndex]}")
+        }
+        action("Home") { showHome() }
     }
 
     private fun showSubjects(track: ExamTrack) {
