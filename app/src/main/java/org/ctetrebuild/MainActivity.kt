@@ -17,6 +17,12 @@ class MainActivity : Activity() {
     private val progress by lazy { ProgressStore(this) }
     private val savedSessions by lazy { SessionPersistence(this) }
     private val history by lazy { TestHistory(this) }
+    private val importedBank by lazy {
+        runCatching {
+            val raw = assets.open("questions-demo.json").bufferedReader().use { it.readText() }
+            QuestionBankJson.parse(raw)
+        }.getOrNull()
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -87,7 +93,9 @@ class MainActivity : Activity() {
     private fun showQuiz(track: ExamTrack, subject: Subject, restored: RestoredSession? = null) {
         val deadline = restored?.deadlineEpochMillis ?: (System.currentTimeMillis() + 120_000L)
         val secondsLeft = ((deadline - System.currentTimeMillis() + 999L) / 1000L).coerceIn(1L, 120L).toInt()
-        val session = PracticeSession(subject.id, PracticeContent.forSubject(subject.id), secondsLeft)
+        val imported = importedBank?.forSubject(subject.id).orEmpty()
+        val questions = if (imported.isNotEmpty()) imported else PracticeContent.forSubject(subject.id)
+        val session = PracticeSession(subject.id, questions, secondsLeft)
         val navigator = QuestionNavigator(session.quiz.questions.map { it.id })
         restored?.answers?.forEach { (id, index) ->
             val q = session.quiz.questions.firstOrNull { it.id == id }
@@ -99,6 +107,7 @@ class MainActivity : Activity() {
         }
         screen(subject.title)
         label("Demonstration practice: ${session.quiz.questions.size} questions, 2 minutes.")
+        label(if (imported.isNotEmpty()) "Questions loaded from bundled JSON" else "Original built-in demonstration questions", 14f)
         val countdown = label("Time remaining: ${secondsLeft / 60}:${(secondsLeft % 60).toString().padStart(2, '0')}", 16f)
         val groups = mutableListOf<RadioGroup>()
         val prompts = mutableListOf<TextView>()
