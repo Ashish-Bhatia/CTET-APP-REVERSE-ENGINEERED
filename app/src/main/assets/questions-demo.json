@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "questions": [
+    {
+      "id": "original-cdp-01",
+      "subjectId": "p1-cdp",
+      "prompt": "Which approach encourages students to construct knowledge actively?",
+      "options": ["Inquiry-based learning", "Only copying notes", "Avoiding discussion", "No feedback"],
+      "correctIndex": 0,
+      "explanation": "Inquiry encourages learners to investigate and explain ideas.",
+      "sourceLicense": "Original educational example created for this project"
+    },
+    {
+      "id": "original-maths-01",
+      "subjectId": "p1-maths",
+      "prompt": "What is one quarter of 36?",
+      "options": ["6", "9", "12", "18"],
+      "correctIndex": 1,
+      "explanation": "36 divided by 4 is 9.",
+      "sourceLicense": "Original educational example created for this project"
+    }
+  ]
+}
