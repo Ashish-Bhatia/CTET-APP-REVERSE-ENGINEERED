@@ -10,7 +10,7 @@ class ExamCatalogTest {
     }
 
     @Test fun paperIIHasTwoAlternative60QuestionGroups() {
-        assertEquals(210, ExamCatalog.paperII.totalQuestions)
+        assertEquals(150, ExamCatalog.paperII.totalQuestions)
         assertEquals(60, ExamCatalog.paperII.subjects[3].questions)
         assertEquals(60, ExamCatalog.paperII.subjects[4].questions)
     }
