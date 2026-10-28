@@ -18,6 +18,7 @@ class MainActivity : Activity() {
     private val savedSessions by lazy { SessionPersistence(this) }
     private val history by lazy { TestHistory(this) }
     private val savedMock by lazy { MockPersistence(this) }
+    private val mockHistory by lazy { MockHistory(this) }
     private val importedBank by lazy {
         runCatching {
             val raw = assets.open("questions-demo.json").bufferedReader().use { it.readText() }
@@ -75,6 +76,7 @@ class MainActivity : Activity() {
             action("Discard saved mock") { savedMock.clear(); showHome() }
         }
         action("View test history") { showHistory() }
+        action("Completed mock history") { showMockHistory() }
         action("Full-paper mock tests") { showMockCatalog() }
         ExamCatalog.tracks.forEach { track ->
             action(track.title) { showSubjects(track) }
@@ -167,10 +169,19 @@ class MainActivity : Activity() {
             if (completed) return
             completed = true
             exam.submit()
+            val result = exam.quiz.result()
+            val specialization = if (blueprint.paper == Paper.I) null else
+                if (blueprint.subjects.last().id == "p2-social") PaperIISpecialization.SOCIAL_STUDIES
+                else PaperIISpecialization.MATHEMATICS_SCIENCE
+            mockHistory.add(MockHistoryEntry(
+                blueprint.paper, specialization, result.correct, result.attempted,
+                System.currentTimeMillis(), MockAnalytics.sections(exam).map {
+                    SectionSummary(it.subject.id, it.correct, it.attempted, it.total)
+                }
+            ))
             savedMock.clear()
             timer?.cancel()
             timer = null
-            val result = exam.quiz.result()
             screen("Full-paper results")
             label("Paper ${blueprint.paper.name}: ${result.correct}/${result.total} correct")
             label("${result.attempted} attempted • ${result.incorrect} incorrect • ${result.unanswered} unanswered")
@@ -398,6 +409,23 @@ class MainActivity : Activity() {
         }
         action("Try again") { showQuiz(track, subject) }
         action("Subjects") { showSubjects(track) }
+        action("Home") { showHome() }
+    }
+
+    private fun showMockHistory() {
+        screen("Completed mock history")
+        val entries = mockHistory.all()
+        if (entries.isEmpty()) label("No completed full-paper mocks yet.")
+        entries.forEach { entry ->
+            val specialization = entry.specialization?.name?.replace('_', ' ') ?: ""
+            label("Paper ${entry.paper.name} ${specialization}: ${entry.correct}/150 correct • ${entry.attempted} attempted")
+            entry.sections.forEach { section ->
+                val title = ExamCatalog.tracks.flatMap { it.subjects }
+                    .firstOrNull { it.id == section.subjectId }?.title ?: section.subjectId
+                label("${title}: ${section.correct}/${section.total} correct", 14f)
+            }
+        }
+        action("Clear mock history") { mockHistory.clear(); showMockHistory() }
         action("Home") { showHome() }
     }
 
