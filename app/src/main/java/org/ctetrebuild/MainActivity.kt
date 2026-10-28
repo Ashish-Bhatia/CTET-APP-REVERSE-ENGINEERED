@@ -118,6 +118,19 @@ class MainActivity : Activity() {
             groups.add(group)
         }
 
+        fun showCurrent() {
+            groups.forEachIndexed { index, group -> group.visibility = if (index == navigator.index) View.VISIBLE else View.GONE }
+        }
+        showCurrent()
+        action("Previous question") { navigator.previous(); showCurrent() }
+        action("Next question") { navigator.next(); showCurrent() }
+        action("Clear current answer") {
+            val id = navigator.currentId
+            session.quiz.clear(id)
+            groups[navigator.index].clearCheck()
+            persist()
+        }
+
         fun finish() {
             if (!session.submitted) session.submit()
             timer?.cancel()
