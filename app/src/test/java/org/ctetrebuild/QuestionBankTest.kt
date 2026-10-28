@@ -24,6 +24,11 @@ class QuestionBankTest {
     }
 
     @Test(expected = IllegalArgumentException::class)
+    fun unknownSubjectRejected() {
+        QuestionBank(listOf(record("unknown", "not-a-ctet-subject")))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
     fun incompleteFullPaperRejected() {
         QuestionBank(listOf(record("one"))).forBlueprint(ExamBlueprintFactory.create(Paper.I))
     }
