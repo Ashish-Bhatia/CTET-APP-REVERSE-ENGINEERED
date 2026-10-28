@@ -70,6 +70,20 @@ class MockExamTest {
         recovered.restore(mapOf(recovered.quiz.questions[0].id to 99), emptySet(), 0)
     }
 
+    @Test fun invalidSnapshotDoesNotPartiallyApplyAnswers() {
+        val recovered = exam()
+        val first = recovered.quiz.questions[0].id
+        val second = recovered.quiz.questions[1].id
+        try {
+            recovered.restore(linkedMapOf(first to 0, second to 99), emptySet(), 10)
+            fail("Expected invalid saved option")
+        } catch (_: IllegalArgumentException) {
+            assertEquals(0, recovered.attemptedCount)
+            assertEquals(0, recovered.navigator.index)
+            assertEquals(0, recovered.markedCount)
+        }
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun rejectsUnknownSavedReviewMark() {
         exam().restore(emptyMap(), setOf("missing-question"), 0)
