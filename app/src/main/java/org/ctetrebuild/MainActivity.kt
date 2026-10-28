@@ -2,7 +2,7 @@ package org.ctetrebuild
 
 import android.app.Activity
 import android.os.Bundle
-import android.view.ViewGroup
+import android.view.View
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.RadioButton
@@ -43,7 +43,7 @@ class MainActivity : Activity() {
             val group = RadioGroup(this)
             question.options.forEachIndexed { optionIndex, option ->
                 group.addView(RadioButton(this).apply {
-                    id = ViewGroup.generateViewId()
+                    id = View.generateViewId()
                     text = option
                     setOnClickListener { quiz.answer(question.id, optionIndex) }
                 })
