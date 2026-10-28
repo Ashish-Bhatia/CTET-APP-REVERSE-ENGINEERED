@@ -16,6 +16,7 @@ class MainActivity : Activity() {
     private var timer: CountDownTimer? = null
     private val progress by lazy { ProgressStore(this) }
     private val savedSessions by lazy { SessionPersistence(this) }
+    private val history by lazy { TestHistory(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -62,6 +63,7 @@ class MainActivity : Activity() {
                 action("Discard saved practice") { savedSessions.clear(); showHome() }
             } else savedSessions.clear()
         }
+        action("View test history") { showHistory() }
         ExamCatalog.tracks.forEach { track ->
             action(track.title) { showSubjects(track) }
             progress.load(track.paper)?.let {
@@ -145,6 +147,7 @@ class MainActivity : Activity() {
             timer = null
             savedSessions.clear()
             progress.save(track.paper, session.quiz.result())
+            history.add(subject.id, session.quiz.result())
             showResult(track, subject, session)
         }
 
@@ -180,6 +183,18 @@ class MainActivity : Activity() {
         }
         action("Try again") { showQuiz(track, subject) }
         action("Subjects") { showSubjects(track) }
+        action("Home") { showHome() }
+    }
+
+    private fun showHistory() {
+        screen("Practice history")
+        val entries = history.all()
+        if (entries.isEmpty()) label("No completed practice tests yet.")
+        entries.forEach { entry ->
+            val subject = ExamCatalog.tracks.flatMap { it.subjects }.firstOrNull { it.id == entry.subjectId }
+            label("${subject?.title ?: entry.subjectId}: ${entry.correct}/${entry.total} correct, ${entry.attempted} attempted")
+        }
+        action("Clear history") { history.clear(); showHistory() }
         action("Home") { showHome() }
     }
 
