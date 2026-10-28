@@ -30,3 +30,12 @@
 - **Important limitation:** mock answers are currently in-memory only. Leaving the screen or process death loses mock progress. No background recovery is implemented. Do not present this as production ready.
 - The bundled dataset does not meet full-paper requirements. No mock can start using the current fixture.
 - No Android build, JUnit run or emulator validation has been completed.
+
+## Phase 19 — local persistence and recovery
+
+- `MockPersistence` stores a versioned JSON snapshot in app-private SharedPreferences, using synchronous commit.
+- Snapshot includes paper, Paper II specialization, original absolute deadline, ordered question IDs, answer indices, marked question IDs and current index.
+- `MockExam.restore` validates IDs/indices and restores answers, review marks and navigation position.
+- `MainActivity` saves after mock interactions and exposes Resume/Discard on Home. Resume checks the current bundled question bank has the same ordered IDs and valid answer indices. Expired saved mocks submit immediately on opening.
+- Completion clears the saved mock; a new mock clears any previous mock snapshot.
+- Remaining limitations: no mock-history record, no answer-by-answer result review, no background completion while app is closed, and no Android build/device validation. SharedPreferences snapshots are local and may be lost when app data is cleared. The bundled question bank remains incomplete.
