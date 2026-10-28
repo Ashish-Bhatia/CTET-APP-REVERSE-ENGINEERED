@@ -47,3 +47,12 @@
 - Two JUnit tests cover empty and partially answered Paper I section scores.
 - Answer review is available only immediately after submission; completed mock results are not persisted as a separate history record.
 - The bundled question bank is still incomplete, and Android build/unit tests/emulator validation remain unexecuted.
+
+## Phase 21 — completed mock history
+
+- Added `MockHistory` with app-private SharedPreferences storage for up to 50 recent completed mock summaries.
+- Each summary stores paper, specialization, completion timestamp, overall correct/attempted counts and per-section totals/correct/attempted.
+- Submission records the summary before clearing the active mock snapshot. The Home screen offers Completed mock history and a clear-history action.
+- Completed mock history stores **scores only**, not the full question/answer review. It does not replace the in-progress mock snapshot.
+- The history storage uses synchronous commit; failures are not yet surfaced through a user-friendly recovery screen.
+- Android build, JUnit execution and emulator validation are still pending; do not treat this as release-ready.
