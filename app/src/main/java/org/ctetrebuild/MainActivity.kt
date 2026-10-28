@@ -17,6 +17,7 @@ class MainActivity : Activity() {
     private val progress by lazy { ProgressStore(this) }
     private val savedSessions by lazy { SessionPersistence(this) }
     private val history by lazy { TestHistory(this) }
+    private val savedMock by lazy { MockPersistence(this) }
     private val importedBank by lazy {
         runCatching {
             val raw = assets.open("questions-demo.json").bufferedReader().use { it.readText() }
@@ -69,6 +70,10 @@ class MainActivity : Activity() {
                 action("Discard saved practice") { savedSessions.clear(); showHome() }
             } else savedSessions.clear()
         }
+        savedMock.load()?.let { snapshot ->
+            action("Resume full-paper mock") { resumeMock(snapshot) }
+            action("Discard saved mock") { savedMock.clear(); showHome() }
+        }
         action("View test history") { showHistory() }
         action("Full-paper mock tests") { showMockCatalog() }
         ExamCatalog.tracks.forEach { track ->
@@ -112,6 +117,7 @@ class MainActivity : Activity() {
                 label("Question coverage complete. You can start the 150-minute mock test.")
                 action("Start full-paper mock") {
                     val questions = bank.forBlueprint(blueprint)
+                    savedMock.clear()
                     showFullMock(blueprint, questions)
                 }
             } else {
@@ -121,10 +127,25 @@ class MainActivity : Activity() {
         action("Back to mock tests") { showMockCatalog() }
     }
 
-    private fun showFullMock(blueprint: ExamBlueprint, questions: List<Question>) {
+    private fun resumeMock(saved: SavedMock) {
+        val blueprint = ExamBlueprintFactory.create(saved.paper, saved.specialization)
+        val questions = runCatching { importedBank?.forBlueprint(blueprint) }.getOrNull()
+        if (questions == null || questions.map { it.id } != saved.questionIds ||
+            saved.answers.any { (id, index) ->
+                questions.firstOrNull { it.id == id }?.options?.indices?.contains(index) != true
+            }) {
+            savedMock.clear()
+            showHome()
+            return
+        }
+        showFullMock(blueprint, questions, saved)
+    }
+
+    private fun showFullMock(blueprint: ExamBlueprint, questions: List<Question>, restored: SavedMock? = null) {
         val exam = MockExam(blueprint, questions)
         val sections = MockSections(blueprint)
-        val deadline = System.currentTimeMillis() + blueprint.durationMinutes * 60_000L
+        restored?.let { exam.restore(it.answers, it.markedIds, it.currentIndex) }
+        val deadline = restored?.deadlineEpochMillis ?: System.currentTimeMillis() + blueprint.durationMinutes * 60_000L
         val clock = SessionClock(deadline)
         screen("Full-paper mock")
         val countdown = label("Time remaining: ${blueprint.durationMinutes}:00")
@@ -134,11 +155,19 @@ class MainActivity : Activity() {
         val choices = RadioGroup(this)
         root.addView(choices)
         var completed = false
+        fun persistMock() {
+            savedMock.save(SavedMock(blueprint.paper,
+                if (blueprint.paper == Paper.I) null else if (blueprint.subjects.last().id == "p2-social")
+                    PaperIISpecialization.SOCIAL_STUDIES else PaperIISpecialization.MATHEMATICS_SCIENCE,
+                deadline, exam.quiz.questions.map { it.id }, exam.snapshotAnswers(),
+                exam.snapshotMarked(), exam.navigator.index))
+        }
 
         fun complete() {
             if (completed) return
             completed = true
             exam.submit()
+            savedMock.clear()
             timer?.cancel()
             timer = null
             val result = exam.quiz.result()
@@ -173,6 +202,7 @@ class MainActivity : Activity() {
                     setOnClickListener {
                         if (!expired()) {
                             exam.answer(optionIndex)
+                            persistMock()
                             renderQuestion()
                         }
                     }
@@ -184,25 +214,31 @@ class MainActivity : Activity() {
             action("Go to ${section.subject.title}") {
                 if (!expired()) {
                     exam.navigator.goTo(section.start)
+                    persistMock()
                     renderQuestion()
                 }
             }
         }
         action("Previous") {
-            if (!expired()) { exam.navigator.previous(); renderQuestion() }
+            if (!expired()) { exam.navigator.previous(); persistMock(); renderQuestion() }
         }
         action("Next") {
-            if (!expired()) { exam.navigator.next(); renderQuestion() }
+            if (!expired()) { exam.navigator.next(); persistMock(); renderQuestion() }
         }
         action("Clear answer") {
-            if (!expired()) { exam.clearAnswer(); renderQuestion() }
+            if (!expired()) { exam.clearAnswer(); persistMock(); renderQuestion() }
         }
         action("Mark/unmark for review") {
-            if (!expired()) { exam.toggleReviewMark(); renderQuestion() }
+            if (!expired()) { exam.toggleReviewMark(); persistMock(); renderQuestion() }
         }
         action("Submit full-paper mock") { complete() }
-        label("Mock answers are held in memory only. Leaving this screen discards progress.")
+        action("Save and return home") {
+            if (!expired()) { persistMock(); showHome() }
+        }
+        label("Mock progress is stored locally; the original deadline continues while away.")
         renderQuestion()
+        if (expired()) return
+        persistMock()
         timer = object : CountDownTimer((deadline - System.currentTimeMillis()).coerceAtLeast(1L), 1_000L) {
             override fun onTick(millisUntilFinished: Long) {
                 val seconds = clock.remainingSeconds(System.currentTimeMillis())
