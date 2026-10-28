@@ -22,6 +22,10 @@ class SessionClockTest {
         assertEquals(Int.MAX_VALUE, SessionClock(Long.MAX_VALUE).remainingSeconds(1L))
     }
 
+    @Test fun negativeEpochDoesNotOverflow() {
+        assertEquals(Int.MAX_VALUE, SessionClock(Long.MAX_VALUE).remainingSeconds(-1L))
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun invalidDeadlineRejected() { SessionClock(0L) }
 }
