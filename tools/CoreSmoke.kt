@@ -39,7 +39,7 @@ fun main() {
         } catch (_: IllegalArgumentException) {
             // Expected: invalid option rejected before any answer is applied.
         }
-        checks += 10
+        checks += 9
     }
     println("Core Kotlin smoke checks passed: $checks (three CTET configurations)")
 }
