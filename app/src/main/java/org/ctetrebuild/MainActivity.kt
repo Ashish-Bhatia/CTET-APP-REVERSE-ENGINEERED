@@ -15,6 +15,7 @@ class MainActivity : Activity() {
     private lateinit var root: LinearLayout
     private var timer: CountDownTimer? = null
     private val progress by lazy { ProgressStore(this) }
+    private val savedSessions by lazy { SessionPersistence(this) }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,6 +54,14 @@ class MainActivity : Activity() {
     private fun showHome() {
         screen("CTET Practice")
         label("Choose a paper. Practice content is original demonstration material.")
+        savedSessions.load()?.let { saved ->
+            val track = ExamCatalog.tracks.firstOrNull { t -> t.subjects.any { it.id == saved.subjectId } }
+            val subject = track?.subjects?.firstOrNull { it.id == saved.subjectId }
+            if (track != null && subject != null) {
+                action("Resume saved practice") { showQuiz(track, subject, saved) }
+                action("Discard saved practice") { savedSessions.clear(); showHome() }
+            } else savedSessions.clear()
+        }
         ExamCatalog.tracks.forEach { track ->
             action(track.title) { showSubjects(track) }
             progress.load(track.paper)?.let {
@@ -66,14 +75,26 @@ class MainActivity : Activity() {
         label("Select a subject for a short practice session.")
         track.subjects.forEach { subject ->
             action("${subject.title} • ${subject.questions} exam questions") {
+                savedSessions.clear()
                 showQuiz(track, subject)
             }
         }
         action("Back to papers") { showHome() }
     }
 
-    private fun showQuiz(track: ExamTrack, subject: Subject) {
-        val session = PracticeSession(subject.id, PracticeContent.forSubject(subject.id), 120)
+    private fun showQuiz(track: ExamTrack, subject: Subject, restored: RestoredSession? = null) {
+        val deadline = restored?.deadlineEpochMillis ?: (System.currentTimeMillis() + 120_000L)
+        val secondsLeft = ((deadline - System.currentTimeMillis() + 999L) / 1000L).coerceIn(1L, 120L).toInt()
+        val session = PracticeSession(subject.id, PracticeContent.forSubject(subject.id), secondsLeft)
+        val navigator = QuestionNavigator(session.quiz.questions.map { it.id })
+        restored?.answers?.forEach { (id, index) ->
+            val q = session.quiz.questions.firstOrNull { it.id == id }
+            if (q != null && index in q.options.indices) session.answer(id, index)
+        }
+        fun persist() {
+            val answers = session.quiz.questions.mapNotNull { q -> session.quiz.selectedIndex(q.id)?.let { q.id to it } }.toMap()
+            savedSessions.save(subject.id, answers, deadline)
+        }
         screen(subject.title)
         label("Demonstration practice: ${session.quiz.questions.size} questions, 2 minutes.")
         val countdown = label("Time remaining: 02:00", 16f)
@@ -86,9 +107,12 @@ class MainActivity : Activity() {
                     id = View.generateViewId()
                     text = option
                     setOnClickListener {
-                        if (!session.submitted) session.answer(question.id, optionIndex)
+                        if (!session.submitted) { session.answer(question.id, optionIndex); persist() }
                     }
                 })
+            }
+            session.quiz.selectedIndex(question.id)?.let { selected ->
+                (group.getChildAt(selected) as RadioButton).isChecked = true
             }
             root.addView(group)
             groups.add(group)
@@ -98,17 +122,21 @@ class MainActivity : Activity() {
             if (!session.submitted) session.submit()
             timer?.cancel()
             timer = null
+            savedSessions.clear()
             progress.save(track.paper, session.quiz.result())
             showResult(track, subject, session)
         }
 
         action("Submit and review answers") { finish() }
-        action("Cancel practice") { showSubjects(track) }
+        action("Save and return") { persist(); showHome() }
+        action("Discard and return") { savedSessions.clear(); showHome() }
+        persist()
 
-        timer = object : CountDownTimer(120_000L, 1_000L) {
+        if (deadline <= System.currentTimeMillis()) { finish(); return }
+        timer = object : CountDownTimer((deadline - System.currentTimeMillis()).coerceAtLeast(1L), 1_000L) {
             override fun onTick(millisUntilFinished: Long) {
-                val elapsed = ((120_000L - millisUntilFinished) / 1000L).toInt()
-                session.tick(elapsed - (120 - session.remainingSeconds))
+                val remaining = ((deadline - System.currentTimeMillis() + 999L) / 1000L).coerceAtLeast(0L).toInt()
+                session.tick((session.remainingSeconds - remaining).coerceAtLeast(0))
                 countdown.text = "Time remaining: ${session.remainingSeconds / 60}:${(session.remainingSeconds % 60).toString().padStart(2, '0')}"
                 if (session.submitted) finish()
             }
