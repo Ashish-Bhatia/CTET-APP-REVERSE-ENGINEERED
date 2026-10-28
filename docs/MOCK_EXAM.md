@@ -39,3 +39,11 @@
 - `MainActivity` saves after mock interactions and exposes Resume/Discard on Home. Resume checks the current bundled question bank has the same ordered IDs and valid answer indices. Expired saved mocks submit immediately on opening.
 - Completion clears the saved mock; a new mock clears any previous mock snapshot.
 - Remaining limitations: no mock-history record, no answer-by-answer result review, no background completion while app is closed, and no Android build/device validation. SharedPreferences snapshots are local and may be lost when app data is cleared. The bundled question bank remains incomplete.
+
+## Phase 20 — section analytics and answer review
+
+- Added pure Kotlin `MockAnalytics.sections(exam)` to calculate per-subject correct, incorrect, attempted and unanswered counts.
+- Results screen now displays per-section scores and offers a complete answer review (selected and correct options).
+- Two JUnit tests cover empty and partially answered Paper I section scores.
+- Answer review is available only immediately after submission; completed mock results are not persisted as a separate history record.
+- The bundled question bank is still incomplete, and Android build/unit tests/emulator validation remain unexecuted.
