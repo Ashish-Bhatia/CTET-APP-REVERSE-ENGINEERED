@@ -5,7 +5,7 @@ enum class Paper { I, II }
 data class Subject(val id: String, val title: String, val questions: Int)
 
 data class ExamTrack(val paper: Paper, val title: String, val subjects: List<Subject>) {
-    val totalQuestions: Int get() = subjects.sumOf { it.questions }
+    val totalQuestions: Int get() = if (paper == Paper.II) 150 else subjects.sumOf { it.questions }
 }
 
 object ExamCatalog {
