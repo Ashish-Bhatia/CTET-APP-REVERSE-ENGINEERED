@@ -97,3 +97,11 @@ Do not commit the reference APK, extracted proprietary code, keys, private endpo
 - Added three `MockExamTest` cases for snapshot round-trip and invalid saved answer/mark state.
 - Checked local runtime: Kotlin compiler is installed, but neither `gradle` nor `sdkmanager` is on PATH. The Android build and all JUnit tests remain **unexecuted**.
 - Do not publish an APK or describe the app as build-verified until an Android SDK/Gradle build and emulator smoke tests succeed.
+
+## Phase 24 — atomic mock recovery
+
+- Verified `main` before edits at `f7ea033269cc5ecd7c5df514c9cab7b48c7a0e4f`.
+- `MockExam.restore` now validates every saved answer's option index before applying any answers, review marks or navigation state.
+- Added a regression test confirming a snapshot containing a valid answer followed by an invalid answer does not partially restore state.
+- Environment still has Kotlin CLI 1.9.0 but lacks Gradle and Android SDK command-line tools. **No Android compilation, JUnit execution or emulator testing occurred in Phase 24.**
+- Release remains blocked until `:app:testDebugUnitTest` and `:app:assembleDebug` run successfully in an Android SDK environment.
