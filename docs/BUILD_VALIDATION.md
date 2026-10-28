@@ -65,3 +65,11 @@ Do not commit the reference APK, extracted proprietary code, keys, private endpo
 - Scope limitation: the local harness was assembled separately, not built from a checked-out Git repository; it is not a complete repository test run.
 - Added `docs/LOCAL_BUILD.md` with JDK 17 / SDK 36 / Gradle prerequisites and exact Gradle commands.
 - Android unit tests, `assembleDebug`, emulator verification and installable APK remain **unverified**.
+
+## Phase 15 — deadline enforcement and environment audit
+
+- Verified `main` at `232055dd152630fe1f7aea811c297a161fa39e27` before changes.
+- Practice answer, clear, previous/next, and save-return actions now check the absolute deadline before mutating session state; expired actions submit the test.
+- Added a negative-epoch overflow regression test to `SessionClockTest` (written, not run).
+- Local environment check in this turn: `java -version` reports OpenJDK **21.0.12**, not JDK 17; `kotlinc` exists; no `gradle` executable or Android SDK found in standard locations. An attempted `git ls-remote` failed because `github.com` could not be resolved.
+- **No Android build, full test suite, emulator test or APK artifact verified.** A JDK 17 toolchain remains recommended for the specified Android Gradle Plugin.
