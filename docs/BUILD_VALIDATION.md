@@ -56,3 +56,12 @@ Do not commit the reference APK, extracted proprietary code, keys, private endpo
 - Wired `MainActivity` to use `SessionClock` for initial remaining time, expiry detection and countdown updates.
 - Environment checked: Java and Kotlin CLI available; Gradle and Android SDK not configured. No `assembleDebug` or `testDebugUnitTest` was run; no APK produced.
 - Remaining blocker: establish a supported Android SDK/Gradle toolchain, execute compilation and tests, then perform emulator/device recovery tests.
+
+## Phase 14 — 2026-10-28
+
+- Local tool check: `java` and `kotlinc` available; `gradle` and Android SDK absent.
+- Compiled a standalone local copy of the updated `SessionClock` source with `kotlinc` and ran a small JVM smoke harness.
+- **Four smoke assertions passed:** initial countdown, final second, exact expiry, and extreme timestamp subtraction saturation.
+- Scope limitation: the local harness was assembled separately, not built from a checked-out Git repository; it is not a complete repository test run.
+- Added `docs/LOCAL_BUILD.md` with JDK 17 / SDK 36 / Gradle prerequisites and exact Gradle commands.
+- Android unit tests, `assembleDebug`, emulator verification and installable APK remain **unverified**.
