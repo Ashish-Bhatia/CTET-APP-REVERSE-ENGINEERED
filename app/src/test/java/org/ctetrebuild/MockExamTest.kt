@@ -48,6 +48,33 @@ class MockExamTest {
         exam.answer(0)
     }
 
+    @Test fun snapshotRestoresAnswersMarksAndPosition() {
+        val original = exam()
+        original.answer(1)
+        original.toggleReviewMark()
+        original.navigator.goTo(90)
+        original.answer(0)
+
+        val recovered = exam()
+        recovered.restore(original.snapshotAnswers(), original.snapshotMarked(), original.navigator.index)
+        assertEquals(90, recovered.navigator.index)
+        assertEquals(2, recovered.attemptedCount)
+        assertEquals(1, recovered.markedCount)
+        assertEquals(1, recovered.quiz.selectedIndex(original.quiz.questions[0].id))
+        assertEquals(0, recovered.quiz.selectedIndex(original.quiz.questions[90].id))
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsInvalidSavedAnswerIndex() {
+        val recovered = exam()
+        recovered.restore(mapOf(recovered.quiz.questions[0].id to 99), emptySet(), 0)
+    }
+
+    @Test(expected = IllegalArgumentException::class)
+    fun rejectsUnknownSavedReviewMark() {
+        exam().restore(emptyMap(), setOf("missing-question"), 0)
+    }
+
     @Test(expected = IllegalArgumentException::class)
     fun rejectsIncompleteMock() {
         MockExam(ExamBlueprintFactory.create(Paper.I), listOf(Question("one", "Prompt", listOf("A", "B"), 0)))
