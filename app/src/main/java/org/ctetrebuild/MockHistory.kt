@@ -55,6 +55,16 @@ class MockHistory(context: Context) {
 
     fun add(entry: MockHistoryEntry) {
         require(entry.correct in 0..150 && entry.attempted in entry.correct..150)
+        require(entry.completedAt > 0L)
+        val blueprint = ExamBlueprintFactory.create(entry.paper, entry.specialization)
+        require(entry.sections.map { it.subjectId } == blueprint.subjects.map { it.id }) {
+            "History sections must match the paper blueprint"
+        }
+        entry.sections.zip(blueprint.subjects).forEach { (section, subject) ->
+            require(section.total == subject.questions)
+            require(section.correct in 0..section.attempted)
+            require(section.attempted in 0..section.total)
+        }
         require(entry.sections.sumOf { it.total } == 150)
         require(entry.sections.sumOf { it.correct } == entry.correct)
         require(entry.sections.sumOf { it.attempted } == entry.attempted)
