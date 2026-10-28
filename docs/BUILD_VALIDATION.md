@@ -48,3 +48,11 @@ Do not commit the reference APK, extracted proprietary code, keys, private endpo
 - Attempted shallow Git clone for standalone Kotlin compilation in local container.
 - Result: **blocked** (`Could not resolve host: github.com`); compilation was not attempted after the clone failure.
 - No Android SDK/Gradle build, unit-test run, or emulator verification completed.
+
+## Phase 13 checkpoint — 2026-10-28
+
+- Verified GitHub `main` checkpoint before changes: `a28fa39d492225170645aa4d1303c240603d89b5`.
+- Added `SessionClock` to compute remaining seconds from an absolute saved deadline, with four JVM test cases.
+- Wired `MainActivity` to use `SessionClock` for initial remaining time, expiry detection and countdown updates.
+- Environment checked: Java and Kotlin CLI available; Gradle and Android SDK not configured. No `assembleDebug` or `testDebugUnitTest` was run; no APK produced.
+- Remaining blocker: establish a supported Android SDK/Gradle toolchain, execute compilation and tests, then perform emulator/device recovery tests.
