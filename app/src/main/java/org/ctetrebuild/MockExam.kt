@@ -37,6 +37,23 @@ class MockExam(
 
     fun isMarked(questionId: String): Boolean = questionId in marked
 
+    fun restore(answers: Map<String, Int>, markedIds: Set<String>, index: Int) {
+        check(!submitted)
+        require(index in quiz.questions.indices)
+        require(answers.keys.all { id -> quiz.questions.any { it.id == id } })
+        require(markedIds.all { id -> quiz.questions.any { it.id == id } })
+        answers.forEach { (id, option) -> quiz.answer(id, option) }
+        marked.clear()
+        marked.addAll(markedIds)
+        navigator.goTo(index)
+    }
+
+    fun snapshotAnswers(): Map<String, Int> = quiz.questions.mapNotNull { q ->
+        quiz.selectedIndex(q.id)?.let { q.id to it }
+    }.toMap()
+
+    fun snapshotMarked(): Set<String> = marked.toSet()
+
     val markedCount: Int get() = marked.size
     val attemptedCount: Int get() = quiz.result().attempted
     val unansweredCount: Int get() = quiz.result().unanswered
