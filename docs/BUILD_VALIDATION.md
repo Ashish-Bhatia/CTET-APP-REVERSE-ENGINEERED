@@ -81,3 +81,11 @@ Do not commit the reference APK, extracted proprietary code, keys, private endpo
 - Question bank now rejects unrecognized CTET subject IDs; one additional unit test was committed.
 - Rechecked the local environment: `git ls-remote` failed with DNS resolution for github.com; no `gradle` or `sdkmanager` executable found. GitHub edits were made via the connected repository API.
 - **No Android build, JUnit execution, emulator run, or APK verified in this phase.**
+
+## Phase 17 — mock exam domain layer
+
+- Verified previous `main` at `56bf571c767655f3075490408fa7dd106f4e9527`.
+- Added `MockExam` with navigation, marking for review, answer clearing, attempted/unanswered counters and submission lock.
+- Added five JVM unit tests and `docs/MOCK_EXAM.md`.
+- Checked local toolchain: `java` and `kotlinc` available, Gradle and Android SDK absent. No build or test run performed.
+- Full mock UI, content corpus, persistence and 150-minute timer remain pending.
