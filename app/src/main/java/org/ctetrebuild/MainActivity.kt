@@ -97,10 +97,11 @@ class MainActivity : Activity() {
         }
         screen(subject.title)
         label("Demonstration practice: ${session.quiz.questions.size} questions, 2 minutes.")
-        val countdown = label("Time remaining: 02:00", 16f)
+        val countdown = label("Time remaining: ${secondsLeft / 60}:${(secondsLeft % 60).toString().padStart(2, '0')}", 16f)
         val groups = mutableListOf<RadioGroup>()
+        val prompts = mutableListOf<TextView>()
         session.quiz.questions.forEachIndexed { index, question ->
-            label("${index + 1}. ${question.prompt}")
+            prompts.add(label("${index + 1}. ${question.prompt}"))
             val group = RadioGroup(this)
             question.options.forEachIndexed { optionIndex, option ->
                 group.addView(RadioButton(this).apply {
@@ -119,7 +120,11 @@ class MainActivity : Activity() {
         }
 
         fun showCurrent() {
-            groups.forEachIndexed { index, group -> group.visibility = if (index == navigator.index) View.VISIBLE else View.GONE }
+            groups.forEachIndexed { index, group ->
+                val visibility = if (index == navigator.index) View.VISIBLE else View.GONE
+                group.visibility = visibility
+                prompts[index].visibility = visibility
+            }
         }
         showCurrent()
         action("Previous question") { navigator.previous(); showCurrent() }
@@ -131,7 +136,10 @@ class MainActivity : Activity() {
             persist()
         }
 
+        var finished = false
         fun finish() {
+            if (finished) return
+            finished = true
             if (!session.submitted) session.submit()
             timer?.cancel()
             timer = null
@@ -143,9 +151,8 @@ class MainActivity : Activity() {
         action("Submit and review answers") { finish() }
         action("Save and return") { persist(); showHome() }
         action("Discard and return") { savedSessions.clear(); showHome() }
-        persist()
-
         if (deadline <= System.currentTimeMillis()) { finish(); return }
+        persist()
         timer = object : CountDownTimer((deadline - System.currentTimeMillis()).coerceAtLeast(1L), 1_000L) {
             override fun onTick(millisUntilFinished: Long) {
                 val remaining = ((deadline - System.currentTimeMillis() + 999L) / 1000L).coerceAtLeast(0L).toInt()
