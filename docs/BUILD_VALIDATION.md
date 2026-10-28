@@ -32,3 +32,12 @@
 ## Copyright and security
 
 Do not commit the reference APK, extracted proprietary code, keys, private endpoints, or question bank to this public repository.
+
+## Phase 9 checkpoint (2026-10-28)
+
+- UI question-navigation visibility now applies to both prompts and answer groups.
+- Submission guard prevents repeated history writes within the same activity session.
+- Added private, bounded history of the latest 50 completed practice attempts with a clear action.
+- Resume countdown initializes from the saved absolute deadline.
+- **No Android build, JUnit run, emulator test, or process-death test has been completed.**
+- Known limitation: full-paper delivery remains a blueprint only; the current practice screen uses two original sample questions per subject. History is local-only and has no migration or cross-device sync.
