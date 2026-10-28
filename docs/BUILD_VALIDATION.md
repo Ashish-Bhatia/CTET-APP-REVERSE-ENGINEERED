@@ -89,3 +89,11 @@ Do not commit the reference APK, extracted proprietary code, keys, private endpo
 - Added five JVM unit tests and `docs/MOCK_EXAM.md`.
 - Checked local toolchain: `java` and `kotlinc` available, Gradle and Android SDK absent. No build or test run performed.
 - Full mock UI, content corpus, persistence and 150-minute timer remain pending.
+
+## Phase 22 — recovery and history integrity
+
+- Verified previous `main` HEAD: `418c48d536a7ec5ae480ab93f679eb6e8531e563`.
+- Hardened `MockHistory.add` to reject wrong paper/section IDs, invalid section totals, impossible attempted/correct counts and nonpositive completion timestamps.
+- Added three `MockExamTest` cases for snapshot round-trip and invalid saved answer/mark state.
+- Checked local runtime: Kotlin compiler is installed, but neither `gradle` nor `sdkmanager` is on PATH. The Android build and all JUnit tests remain **unexecuted**.
+- Do not publish an APK or describe the app as build-verified until an Android SDK/Gradle build and emulator smoke tests succeed.
