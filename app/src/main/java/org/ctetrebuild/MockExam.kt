@@ -42,6 +42,11 @@ class MockExam(
         require(index in quiz.questions.indices)
         require(answers.keys.all { id -> quiz.questions.any { it.id == id } })
         require(markedIds.all { id -> quiz.questions.any { it.id == id } })
+        // Validate the complete snapshot before changing any in-memory state.
+        val byId = quiz.questions.associateBy { it.id }
+        require(answers.all { (id, option) -> option in requireNotNull(byId[id]).options.indices }) {
+            "Saved answer index is invalid"
+        }
         answers.forEach { (id, option) -> quiz.answer(id, option) }
         marked.clear()
         marked.addAll(markedIds)
