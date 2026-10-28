@@ -107,9 +107,15 @@ class MainActivity : Activity() {
             savedSessions.save(subject.id, answers, deadline)
         }
         screen(subject.title)
-        label("Demonstration practice: ${session.quiz.questions.size} questions, 2 minutes.")
+        label("Demonstration practice: ${session.quiz.questions.size} questions; 2-minute original deadline.")
         label(if (imported.isNotEmpty()) "Questions loaded from bundled JSON" else "Original built-in demonstration questions", 14f)
         val countdown = label("Time remaining: ${secondsLeft / 60}:${(secondsLeft % 60).toString().padStart(2, '0')}", 16f)
+        lateinit var finishSession: () -> Unit
+        fun enforceDeadline(): Boolean {
+            if (!clock.isExpired(System.currentTimeMillis())) return false
+            finishSession()
+            return true
+        }
         val groups = mutableListOf<RadioGroup>()
         val prompts = mutableListOf<TextView>()
         session.quiz.questions.forEachIndexed { index, question ->
@@ -120,7 +126,10 @@ class MainActivity : Activity() {
                     id = View.generateViewId()
                     text = option
                     setOnClickListener {
-                        if (!session.submitted) { session.answer(question.id, optionIndex); persist() }
+                        if (!enforceDeadline() && !session.submitted) {
+                            session.answer(question.id, optionIndex)
+                            persist()
+                        }
                     }
                 })
             }
@@ -139,9 +148,14 @@ class MainActivity : Activity() {
             }
         }
         showCurrent()
-        action("Previous question") { navigator.previous(); showCurrent() }
-        action("Next question") { navigator.next(); showCurrent() }
+        action("Previous question") {
+            if (!enforceDeadline()) { navigator.previous(); showCurrent() }
+        }
+        action("Next question") {
+            if (!enforceDeadline()) { navigator.next(); showCurrent() }
+        }
         action("Clear current answer") {
+            if (enforceDeadline()) return@action
             val id = navigator.currentId
             session.quiz.clear(id)
             groups[navigator.index].clearCheck()
@@ -161,8 +175,11 @@ class MainActivity : Activity() {
             showResult(track, subject, session)
         }
 
+        finishSession = { finish() }
         action("Submit and review answers") { finish() }
-        action("Save and return") { persist(); showHome() }
+        action("Save and return") {
+            if (!enforceDeadline()) { persist(); showHome() }
+        }
         action("Discard and return") { savedSessions.clear(); showHome() }
         if (clock.isExpired(System.currentTimeMillis())) { finish(); return }
         persist()
