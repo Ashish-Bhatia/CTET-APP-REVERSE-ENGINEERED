@@ -20,6 +20,9 @@ class QuestionBank(records: List<QuestionRecord>) {
         items.forEach { record ->
             require(record.subjectId.isNotBlank()) { "Missing subject ID" }
             require(record.sourceLicense.isNotBlank()) { "Missing source license" }
+            require(ExamCatalog.tracks.any { track -> track.subjects.any { it.id == record.subjectId } }) {
+                "Unknown CTET subject: ${record.subjectId}"
+            }
             record.toQuestion() // validate prompt, options and answer key
         }
     }
