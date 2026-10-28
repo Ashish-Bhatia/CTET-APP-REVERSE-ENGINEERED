@@ -41,3 +41,10 @@ Do not commit the reference APK, extracted proprietary code, keys, private endpo
 - Resume countdown initializes from the saved absolute deadline.
 - **No Android build, JUnit run, emulator test, or process-death test has been completed.**
 - Known limitation: full-paper delivery remains a blueprint only; the current practice screen uses two original sample questions per subject. History is local-only and has no migration or cross-device sync.
+
+## Phase 11 validation attempt
+
+- Added `QuestionBankJson.kt` and a two-item original JSON fixture.
+- Attempted shallow Git clone for standalone Kotlin compilation in local container.
+- Result: **blocked** (`Could not resolve host: github.com`); compilation was not attempted after the clone failure.
+- No Android SDK/Gradle build, unit-test run, or emulator verification completed.
