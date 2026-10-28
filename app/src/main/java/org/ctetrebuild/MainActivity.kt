@@ -109,12 +109,108 @@ class MainActivity : Activity() {
             }
             val ready = runCatching { bank.forBlueprint(blueprint) }.isSuccess
             if (ready) {
-                label("Question coverage complete. Full-paper test UI is not yet implemented.")
+                label("Question coverage complete. You can start the 150-minute mock test.")
+                action("Start full-paper mock") {
+                    val questions = bank.forBlueprint(blueprint)
+                    showFullMock(blueprint, questions)
+                }
             } else {
                 label("Mock test unavailable: required licensed question coverage is incomplete.")
             }
         }
         action("Back to mock tests") { showMockCatalog() }
+    }
+
+    private fun showFullMock(blueprint: ExamBlueprint, questions: List<Question>) {
+        val exam = MockExam(blueprint, questions)
+        val sections = MockSections(blueprint)
+        val deadline = System.currentTimeMillis() + blueprint.durationMinutes * 60_000L
+        val clock = SessionClock(deadline)
+        screen("Full-paper mock")
+        val countdown = label("Time remaining: ${blueprint.durationMinutes}:00")
+        val status = label("")
+        val questionTitle = label("")
+        val questionPrompt = label("")
+        val choices = RadioGroup(this)
+        root.addView(choices)
+        var completed = false
+
+        fun complete() {
+            if (completed) return
+            completed = true
+            exam.submit()
+            timer?.cancel()
+            timer = null
+            val result = exam.quiz.result()
+            screen("Full-paper results")
+            label("Paper ${blueprint.paper.name}: ${result.correct}/${result.total} correct")
+            label("${result.attempted} attempted • ${result.incorrect} incorrect • ${result.unanswered} unanswered")
+            label("Marked for review at submission: ${exam.markedCount}")
+            action("Home") { showHome() }
+        }
+
+        fun expired(): Boolean {
+            if (!clock.isExpired(System.currentTimeMillis())) return false
+            complete()
+            return true
+        }
+
+        fun renderQuestion() {
+            if (completed) return
+            val index = exam.navigator.index
+            val question = exam.quiz.questions[index]
+            val section = sections.sectionAt(index)
+            questionTitle.text = "Question ${index + 1}/${blueprint.totalQuestions} • ${section.subject.title}"
+            questionPrompt.text = question.prompt
+            status.text = "Attempted: ${exam.attemptedCount} • Unanswered: ${exam.unansweredCount} • Marked: ${exam.markedCount}" +
+                if (exam.isMarked(question.id)) " • Current: marked" else ""
+            choices.removeAllViews()
+            question.options.forEachIndexed { optionIndex, option ->
+                choices.addView(RadioButton(this).apply {
+                    id = View.generateViewId()
+                    text = option
+                    isChecked = exam.quiz.selectedIndex(question.id) == optionIndex
+                    setOnClickListener {
+                        if (!expired()) {
+                            exam.answer(optionIndex)
+                            renderQuestion()
+                        }
+                    }
+                })
+            }
+        }
+
+        sections.ranges.forEach { section ->
+            action("Go to ${section.subject.title}") {
+                if (!expired()) {
+                    exam.navigator.goTo(section.start)
+                    renderQuestion()
+                }
+            }
+        }
+        action("Previous") {
+            if (!expired()) { exam.navigator.previous(); renderQuestion() }
+        }
+        action("Next") {
+            if (!expired()) { exam.navigator.next(); renderQuestion() }
+        }
+        action("Clear answer") {
+            if (!expired()) { exam.clearAnswer(); renderQuestion() }
+        }
+        action("Mark/unmark for review") {
+            if (!expired()) { exam.toggleReviewMark(); renderQuestion() }
+        }
+        action("Submit full-paper mock") { complete() }
+        label("Mock answers are held in memory only. Leaving this screen discards progress.")
+        renderQuestion()
+        timer = object : CountDownTimer((deadline - System.currentTimeMillis()).coerceAtLeast(1L), 1_000L) {
+            override fun onTick(millisUntilFinished: Long) {
+                val seconds = clock.remainingSeconds(System.currentTimeMillis())
+                countdown.text = "Time remaining: ${seconds / 60}:${(seconds % 60).toString().padStart(2, '0')}"
+                if (seconds == 0) complete()
+            }
+            override fun onFinish() { complete() }
+        }.start()
     }
 
     private fun showSubjects(track: ExamTrack) {
