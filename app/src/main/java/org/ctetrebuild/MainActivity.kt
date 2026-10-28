@@ -70,12 +70,51 @@ class MainActivity : Activity() {
             } else savedSessions.clear()
         }
         action("View test history") { showHistory() }
+        action("Full-paper mock tests") { showMockCatalog() }
         ExamCatalog.tracks.forEach { track ->
             action(track.title) { showSubjects(track) }
             progress.load(track.paper)?.let {
                 label("Last result: ${it.correct}/${it.total} • ${it.attempted} attempted", 14f)
             }
         }
+    }
+
+    private fun showMockCatalog() {
+        screen("Full-paper mock tests")
+        label("Each mock requires 150 independently authored or properly licensed questions. Incomplete papers cannot start.")
+        action("Paper I — 150 questions") { showMockReadiness(Paper.I) }
+        action("Paper II — Mathematics and Science") {
+            showMockReadiness(Paper.II, PaperIISpecialization.MATHEMATICS_SCIENCE)
+        }
+        action("Paper II — Social Studies") {
+            showMockReadiness(Paper.II, PaperIISpecialization.SOCIAL_STUDIES)
+        }
+        action("Home") { showHome() }
+    }
+
+    private fun showMockReadiness(
+        paper: Paper,
+        specialization: PaperIISpecialization? = null
+    ) {
+        val blueprint = ExamBlueprintFactory.create(paper, specialization)
+        screen("Mock test readiness")
+        label("Paper ${paper.name} • ${blueprint.totalQuestions} questions • ${blueprint.durationMinutes} minutes")
+        val bank = importedBank
+        if (bank == null) {
+            label("Bundled question bank could not be loaded. Mock test unavailable.")
+        } else {
+            blueprint.subjects.forEach { subject ->
+                val available = bank.forSubject(subject.id).size
+                label("${subject.title}: ${available}/${subject.questions} available")
+            }
+            val ready = runCatching { bank.forBlueprint(blueprint) }.isSuccess
+            if (ready) {
+                label("Question coverage complete. Full-paper test UI is not yet implemented.")
+            } else {
+                label("Mock test unavailable: required licensed question coverage is incomplete.")
+            }
+        }
+        action("Back to mock tests") { showMockCatalog() }
     }
 
     private fun showSubjects(track: ExamTrack) {
