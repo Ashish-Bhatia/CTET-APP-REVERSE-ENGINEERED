@@ -92,7 +92,8 @@ class MainActivity : Activity() {
 
     private fun showQuiz(track: ExamTrack, subject: Subject, restored: RestoredSession? = null) {
         val deadline = restored?.deadlineEpochMillis ?: (System.currentTimeMillis() + 120_000L)
-        val secondsLeft = ((deadline - System.currentTimeMillis() + 999L) / 1000L).coerceIn(1L, 120L).toInt()
+        val clock = SessionClock(deadline)
+        val secondsLeft = clock.remainingSeconds(System.currentTimeMillis()).coerceAtLeast(1)
         val imported = importedBank?.forSubject(subject.id).orEmpty()
         val questions = if (imported.isNotEmpty()) imported else PracticeContent.forSubject(subject.id)
         val session = PracticeSession(subject.id, questions, secondsLeft)
@@ -163,11 +164,11 @@ class MainActivity : Activity() {
         action("Submit and review answers") { finish() }
         action("Save and return") { persist(); showHome() }
         action("Discard and return") { savedSessions.clear(); showHome() }
-        if (deadline <= System.currentTimeMillis()) { finish(); return }
+        if (clock.isExpired(System.currentTimeMillis())) { finish(); return }
         persist()
         timer = object : CountDownTimer((deadline - System.currentTimeMillis()).coerceAtLeast(1L), 1_000L) {
             override fun onTick(millisUntilFinished: Long) {
-                val remaining = ((deadline - System.currentTimeMillis() + 999L) / 1000L).coerceAtLeast(0L).toInt()
+                val remaining = clock.remainingSeconds(System.currentTimeMillis())
                 session.tick((session.remainingSeconds - remaining).coerceAtLeast(0))
                 countdown.text = "Time remaining: ${session.remainingSeconds / 60}:${(session.remainingSeconds % 60).toString().padStart(2, '0')}"
                 if (session.submitted) finish()
