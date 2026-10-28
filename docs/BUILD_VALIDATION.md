@@ -73,3 +73,11 @@ Do not commit the reference APK, extracted proprietary code, keys, private endpo
 - Added a negative-epoch overflow regression test to `SessionClockTest` (written, not run).
 - Local environment check in this turn: `java -version` reports OpenJDK **21.0.12**, not JDK 17; `kotlinc` exists; no `gradle` executable or Android SDK found in standard locations. An attempted `git ls-remote` failed because `github.com` could not be resolved.
 - **No Android build, full test suite, emulator test or APK artifact verified.** A JDK 17 toolchain remains recommended for the specified Android Gradle Plugin.
+
+## Phase 16 — mock readiness
+
+- Added a user-facing mock-test readiness screen for Paper I and both Paper II specializations.
+- Readiness shows per-subject counts and refuses to start incomplete mock tests. The full-paper examination UI is not implemented.
+- Question bank now rejects unrecognized CTET subject IDs; one additional unit test was committed.
+- Rechecked the local environment: `git ls-remote` failed with DNS resolution for github.com; no `gradle` or `sdkmanager` executable found. GitHub edits were made via the connected repository API.
+- **No Android build, JUnit execution, emulator run, or APK verified in this phase.**
